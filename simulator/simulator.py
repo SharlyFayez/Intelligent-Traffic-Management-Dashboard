@@ -2,7 +2,7 @@ import requests
 import random
 import time
 
-API_URL = "http://localhost:8000/traffic"
+API_URL = "http://backend:8000/traffic"
 
 while True:
     traffic_count = random.randint(1, 50)

@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from database import engine, SessionLocal
+from models import TrafficData, Base
 
 app = FastAPI()
 
-# storage مؤقت للبيانات
-traffic_data = []
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def home():
@@ -12,17 +22,29 @@ def home():
 
 @app.post("/traffic")
 def add_traffic(count: int):
-    data = {
-        "count": count,
-        "time": str(datetime.now())
-    }
-    traffic_data.append(data)
-    return {"status": "added", "data": data}
+
+    db = SessionLocal()
+
+    traffic = TrafficData(
+        count=count,
+        time=str(datetime.now())
+    )
+
+    db.add(traffic)
+    db.commit()
+
+    return {"status": "added"}
 
 @app.get("/stats")
 def stats():
-    total = sum(item["count"] for item in traffic_data)
+
+    db = SessionLocal()
+
+    data = db.query(TrafficData).all()
+
+    total = sum(item.count for item in data)
+
     return {
         "total_cars": total,
-        "records": len(traffic_data)
+        "records": len(data)
     }
